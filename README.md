@@ -8,3 +8,5 @@ Models considered include:
 - Dynamic Nelson Siegel with time-varying shape- and volatility parameter
 - Arbitrage Free Dynamic Nelson Siegel
 - (and, if time allows: Dynamic Nelson Siegel with Markov-Switching Regime Changes)
+
+- repository will be populated by end of May 2024 once I have submitted my thesis, until then, this README.txt is all there is
