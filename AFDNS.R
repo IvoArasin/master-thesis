@@ -25,8 +25,8 @@ factor_loadings <- function(l=0.72,m=c(1/365, 7/365, 14/365, 1/12, 2/12, 3/12, 6
   column2 <- (1 - exp(-l * m))/(l * m)
   column3 <- (1 - exp(-l * m) - l*m*exp(-l*m))/(l*m)
   
-  lambmat <- cbind(column1,column2,column3)
-  return(lambmat)
+  B <- cbind(column1,column2,column3)
+  return(B)
 } 
 
 # Yield Adjustment Term (see Christensen 2009 p.20 at the bottom)
