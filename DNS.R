@@ -188,7 +188,7 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10){
     i<-i+1
     
     # optimize model parameters
-    optim_values<-optim(parameters,model,control = list(trace=1, maxit=100000))
+    optim_values<-optim(parameters,model,control = list(trace=1, maxit=100000), Y=input_data)
     
     #convergence
     optim_statistics[i,1] <- optim_values$convergence
