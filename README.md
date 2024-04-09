@@ -9,4 +9,4 @@ Models considered include:
 - Arbitrage Free Dynamic Nelson Siegel (AFDNS)
 
 The data:
-![Yield Curve Data](fullYieldDataset.pdf)
+![Yield Curve Data](YieldsFullSample.jpg)
