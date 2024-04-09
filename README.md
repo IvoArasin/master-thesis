@@ -7,3 +7,6 @@ Models considered include:
 - Dynamic Nelson Siegel with time-varying common volatility parameter (DNS-TVV)
 - Dynamic Nelson Siegel with time-varying shape- and volatility parameter (DNS-TVSV)
 - Arbitrage Free Dynamic Nelson Siegel (AFDNS)
+
+The data:
+![alt text]([fullYieldDataset.pdf](https://github.com/IvoArasin/master-thesis/blob/84413bac78f71cc8377497dd53cc2ff92fa1b151/fullYieldDataset.pdf))
