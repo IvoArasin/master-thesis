@@ -9,4 +9,4 @@ Models considered include:
 - Arbitrage Free Dynamic Nelson Siegel (AFDNS)
 
 The data:
-![plot](https://github.com/IvoArasin/master-thesis/blob/84413bac78f71cc8377497dd53cc2ff92fa1b151/fullYieldDataset.pdf)
+![Alt text]([image link](https://github.com/IvoArasin/master-thesis/blob/84413bac78f71cc8377497dd53cc2ff92fa1b151/fullYieldDataset.pdf))
