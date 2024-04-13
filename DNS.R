@@ -305,3 +305,12 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10, win
   write.csv(result, fileName_finalOutput, row.names=TRUE)
   return(optim_values$par)
 }
+
+# To convert optimized parameters between estimations using differently scaled data
+para_scaler <- function(parameters){
+len_ <- length(parameters)
+parameters_scaledDown <- parameters
+parameters_scaledDown[5:len_] <- parameters_scaledDown[5:len_]/100
+parameters_scaledDown
+}
+
