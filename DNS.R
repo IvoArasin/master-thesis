@@ -90,7 +90,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
   tryCatch(
     {
       cannot_be_done <- 0
-      P.t[1, ,] <-lyapunov(N=N,phi=phi,Q=Q) # Start variance matrix. Pt0
+      P.t[1, ,] <-lyapunov(N=N,phi=phi,Q=Q)
     },
     warning = function(w){
       print(w)
