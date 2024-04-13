@@ -286,15 +286,15 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10){
     
     #iterations
     optim_statistics[i,2] <- total_iterations
+
+        # model parameters
+    model_parameters[i, ] <- optim_values$par
+    parameters <- optim_values$par
     
     # NegLogLike
     prevLogLike <- logLike
     logLike <- model(para=parameters, dataset=input_data, return=TRUE, h=0)
     optim_statistics[i,3] <- logLike
-    
-    # model parameters
-    model_parameters[i, ] <- optim_values$par
-    parameters <- optim_values$par
     
     # filtered RMSE
     model_output <- model(parameters=parameters, dataset=input_data, returnOnlyLikelihood=FALSE, h=0)
