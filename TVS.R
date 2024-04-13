@@ -225,44 +225,6 @@ independent_DNS_TVS <- function(para,Y,lik=TRUE, h=0) {
   }
 }
 
-
-# To convert optimized parameters between estimations using differently scaled data
-para_scaler <- function(parameters){
-  parameters_scaledDown <- parameters
-  parameters_scaledDown[5:7] <- parameters_scaledDown[5:7]/100
-  parameters_scaledDown[9:11] <- parameters_scaledDown[9:11]/100
-  parameters_scaledDown[13:32] <- parameters_scaledDown[13:32]/100
-  parameters_scaledDown
-}
-
-para_init3 <- c( # This one works very well along with the bounds
-  0.98, 0.97, 0.93, 0.95,
-  3.2, -1.6, -2.4, -1.05,
-  0.26, 0.31, 0.5, 0.2,
-  
-  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
-  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1
-)
-
-
-lower_ <- c(0.1, 0.1, 0.1, 0.1,
-            2, -10, -10, -5,
-            0.01, 0.01, 0.01, 0.01,
-            
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0)
-
-upper_ <- c(0.999999, 0.999999, 0.999999, 0.999999,
-            5, 0, 0, 3,
-            1, 1, 1, 1,
-            
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-
-TVS_lbfgsb_calmPeriod_window_6 <- optim(TVS_twoStepFullSample_inits,independent_DNS_TVS,Y=data[25:145,],lik=TRUE,control = list(REPORT=2), method="L-BFGS-B", lower=lower_, upper=upper_)
-TVS_lbfgsb_calmPeriod_window_6$par
-
-
 ###############################################################
 ###############################################################
 ###############################################################
@@ -372,4 +334,13 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10, win
   result <- list("optim_statistics"=optim_statistics, "model_parameters"=model_parameters, "filtered_error_RMSE"=filtered_error_RMSE)
   write.csv(result, fileName_finalOutput, row.names=TRUE)
   return(optim_values$par)
+}
+
+# To convert optimized parameters between estimations using differently scaled data
+para_scaler <- function(parameters){
+  parameters_scaledDown <- parameters
+  parameters_scaledDown[5:7] <- parameters_scaledDown[5:7]/100
+  parameters_scaledDown[9:11] <- parameters_scaledDown[9:11]/100
+  parameters_scaledDown[13:32] <- parameters_scaledDown[13:32]/100
+  parameters_scaledDown
 }
