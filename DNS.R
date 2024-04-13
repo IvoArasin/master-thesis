@@ -36,7 +36,6 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
   T <- nrow(Y)
   W <- ncol(Y)
   l <- para[1]
-  pars<-list()
 
   # Create vectors and matrices
   mu	<- matrix(NA,N,1) # Mean vector
