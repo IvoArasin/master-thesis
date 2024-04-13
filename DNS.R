@@ -134,7 +134,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
     }
     else{
       # Try Catch block to prevent model estimation from being interrupted by an error
-      # If inversion of F fails, return a high likelihood so optimizer knows it's headed the wrong way
+      # If inversion of F fails, this returns a low likelihood so optimizer knows it's headed the wrong way
       cannot_be_done <<- 0
       tryCatch(
         {
