@@ -32,7 +32,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
     print_param_counter <<- 0
   }
   print_param_counter <<- print_param_counter +1
-  total_iterations <<- total_iterations <<- 0 +1
+  total_iterations <<- total_iterations +1
   T <- nrow(Y)
   W <- ncol(Y)
   l <- para[1]
