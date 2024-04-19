@@ -70,7 +70,7 @@ independent_DNS_TVV <- function(para,Y,lik=TRUE, h=0) {
   
   # Gamma vector
   start_ <- 11 + W
-  end_ <- 11 + W -1
+  end_ <- 11 + 2*W -1
   Gamma <- abs(para[start_:end_])
   
   B <- cbind(B, Gamma)
