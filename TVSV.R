@@ -1,10 +1,3 @@
-#################################################################################
-### DNS with time-varying shape and volatility (Koopman et al. 2010) in R     ###
-### Ivo L. Arasin                                                             ###
-### ivo.arasin@aol.com ivolovis.arasin@student.kuleuven.be                    ###
-### March 2024                                                                ###
-### Disclaimer: No warranty of any kind                                       ###
-#################################################################################
 library(readxl)
 data <- read_excel("/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/zero_rates08til23.xlsx")
 m <- c(1/365, 7/365, 14/365, 1/12, 2/12, 3/12, 6/12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15)
@@ -153,7 +146,7 @@ KalmanFilterTVSV <- function(para,Y,lik=TRUE, h=0) {
   {
     # Gamma Restrictions
     if(gamma1<=0 || gamma2<=0 || gamma1+gamma2>=1){
-      print(paste("Gamma error: ", (gamma1+gamma2)))
+      print(paste("Gamma out of bounds: ", (gamma1+gamma2)))
       logLik<- -1000000000000000
       break
       
@@ -284,6 +277,7 @@ TVSV_twoStepInitGuess <- c(
   1,1,1,1,1,1,1,1,1,1,
   1,1,1,1,1,1,1,1,1,1,
   0.4, 0.4)
+
 # Manually optimize model
 TVSV_model_optim <- optim(TVSV_twoStepInitGuess,KalmanFilterTVSV,control = list(REPORT=5), Y=data, lik=TRUE, h=0, method="BFGS")
 optim_paras <- TVSV_model_optim$par
@@ -294,6 +288,15 @@ time_ <- 178
 recon <- factor_loadings(TVSV_model$a.tt[time_,4], m)%*%TVSV_model$a.tt[time_,1:3]+optim_paras[33:52]*TVSV_model$a.tt[time_,5]
 plot(m, data[(time_),], type="l")
 lines(m, recon, type="l", lty=2, col="blue")
+
+# Plot Gamma weights
+plot(m, optim_paras[33:52], type="b", main=expression(paste("Weights ", Gamma[epsilon])))
+
+# Plot Volatility Variance h_t
+plot(TVSV_model$h_t, type="l", main=expression(paste("Common Volatility ", h[t])))
+
+# Plot Shape Parameter
+plot(TVSV_model$a.tt[,4], type="l", main=expression(paste("Shape Parameter Volatility ", lambda)))
 
 # Automatically optimize model in recursive fashion (Iterative Nelder-Mead)
 myDirectory = "/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/optimized_files/RollingWindowForcasts"
