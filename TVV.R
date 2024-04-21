@@ -250,8 +250,8 @@ para_init_TVV <- c( # derived from two-step method
 TVV_optim_object <- optim(para_init_TVV, independent_DNS_TVV, Y=data, method="BFGS")
 optim_para <- TVV_optim_object$par
 
-TVV_model <- independent_DNS_TVV(optim_para, Y=data, lik=FALSE, h=12)
 # Apply model
+TVV_model <- independent_DNS_TVV(optim_para, Y=data, lik=FALSE, h=12)
 
 # Plot common volatility variance h_t
 plot(TVV_model$h_t[10:191], type="l", main=expression(paste("Common Volatility ", h[t])))
