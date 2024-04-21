@@ -1,12 +1,4 @@
-#################################################################################
-### Arbitrage-Free Dynamic Nelson Siegel Model (Christensen et al. 2009) in R ###
-### Ivo L. Arasin                                                             ###
-### ivo.arasin@aol.com ivolovis.arasin@student.kuleuven.be                    ###
-### March 2024                                                                ###
-### Disclaimer: No warranty of any kind                                       ###
-#################################################################################
 library(readxl)
-require(xts)
 library(expm)
 # Import Data
 data <- read_excel("/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/zero_rates08til23.xlsx")
@@ -16,7 +8,7 @@ N <- 3
 dt <- 1/12
 scaler <- 100 # Scale data such that 1=100% and 0.01=1%
 data <- as.matrix(subset(data, select=-c(1, 21, 22)))/scaler
-train_data <- data
+#train_data <- data
 
 # Factor Loadings
 factor_loadings <- function(l=0.72,m=c(1/365, 7/365, 14/365, 1/12, 2/12, 3/12, 6/12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15))
@@ -134,14 +126,18 @@ KalmanFilter_AFDNS <- function(parameters, dataset=train_data, returnOnlyLikelih
   yield_adj <- yield_adjustment_term(sigma11=Sigma[1,1], sigma22=Sigma[2,2], sigma33=Sigma[3,3], lambda=l, m=maturity_vector)
   B <- factor_loadings(l, maturity_vector)
   
+  # This term is taken as is from the paper, but relates to the standard DNS term of (I-A)*mu
+  # But given its origin in continuous time, it bears different variable names
   Phi0 <- (diag(N) - Phi1)%*%theta
   
+  # Also a restriction from the orig. paper Christensen et al. 2009
   result_object <- initialize(K_P, Sigma, delta_t)
   error <- result_object$error
   if(error){
     print("K_P is not positive definite!")
     return(10000000000000)
   }
+  
   Q <- result_object$Q
   
   # Define recursive KF variables
@@ -157,12 +153,6 @@ KalmanFilter_AFDNS <- function(parameters, dataset=train_data, returnOnlyLikelih
   
   P.t[,,1] <- result_object$P_init
   x.t[1,] <- theta
-  
-  Q_eigen <- eigen(Q)
-  Q_eigvals <- Q_eigen$values
-  
-  H_eigen <- eigen(H)
-  H_eigvals <- H_eigen$values
   
   # Kalman Filter Recursion
   for(t in 1:T){
@@ -185,8 +175,8 @@ KalmanFilter_AFDNS <- function(parameters, dataset=train_data, returnOnlyLikelih
       return(10000000000000)
       break
     }, finally = {
-      # Update Step
       
+      # Update Step
       x.tt[t,] <- x.t[t,] + P.t[,,t]%*%t(B)%*%invF%*%v[t,]
       P.tt[,,t] <- P.t[,,t] - P.t[,,t]%*%t(B)%*%invF%*%B%*%P.t[,,t]
       
@@ -252,8 +242,9 @@ AFNS_model_object <- KalmanFilter_AFDNS(parameter=optim_paras, dataset=data, ret
 time_ <- 130
 y_adj_term <- yield_adjustment_term(optim_paras[8], optim_paras[9], optim_paras[10], optim_paras[1], m)
 recon <- factor_loadings(optim_paras[1], m)%*%AFNS_model_object$x.tt[time_, 1:3]+y_adj_term
-plot(m, data[time_,]*100, type="l", main="AFDNS")
-lines(m, recon*100, type="l", lty=2, col="blue")
+plot(m, data[time_,]*100, type="l", main="AFDNS") # Actual Observed Yield Curve
+lines(m, data[time_-1,]*100, type="l", lty=2, col="red") # Previous Yield Curve (i.e. Random Walk)
+lines(m, recon*100, type="l", lty=2, col="blue") # Reconstructed Yield Curve by AFDNS
 
 # Inspet yield adjustment term
 plot(m, y_adj_term*100, type="l", main="Yield Adjustment Term")
@@ -261,9 +252,45 @@ plot(m, y_adj_term*100, type="l", main="Yield Adjustment Term")
 ################################################################
 # Automatic optimization with multiple self-initiated restarts #
 ################################################################
-automatic_optimization_test <- automatic_optimization(para_init, KalmanFilter_AFDNS, train_data, maxiter=30)
 
-automatic_optimization <- function(para_init, model, input_data, maxiter=10){
+para_init_AFDNS <- c(
+  0.35,
+  0.99, 0.98, 0.95,
+  0.03, -0.018, -0.0255,
+  0.01, 0.01, 0.01,
+  
+  0.01,  0.01,  0.01,  0.01,  0.01,0.01,  0.01,  0.01,  0.01,  0.01,
+  0.01,  0.01,  0.01,  0.01,  0.01,0.01,  0.01,  0.01,  0.01,  0.01
+)
+
+# Automatically optimize model in recursive fashion (Iterative Nelder-Mead)
+myDirectory = "/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/optimized_files/RollingWindowForcasts"
+automated_rollingWindow(para_init=para_init_AFDNS, model=KalmanFilter_AFDNS, maxiter=15, maxFuncEvals=2000, data=data, directoryPath=myDirectory, method_="BFGS")
+
+# This function can be used to recursively optimize expanding windows
+automated_rollingWindow <- function(para_init, model, start_=1, end_=0, data=data, maxiter=10, maxFuncEvals=100000, directoryPath="", method_="Nelder-Mead"){
+  starting_values <- para_init
+  start <- start_
+  if(end_==0){
+    end_ <- nrow(data)
+  }
+  for(i in 1:length(end_)){
+    end <- end_[i]
+    window_data <- data[start:end,]
+    
+    starting_values <- automatic_optimization(starting_values, model, window_data, maxiter=maxiter, window_nr=i, directoryPath=directoryPath, maxFuncEvals=maxFuncEvals, method_=method_)
+    preds <- model(para=starting_values, dataset=window_data, returnOnlyLikelihood=FALSE,h=12)
+    preds <- preds$y_t_h
+    preds_h12 <- preds[12,]
+    preds_h6 <- preds[6,]
+    preds_h1 <- preds[1,]
+    predictions <- rbind(preds_h12, preds_h6, preds_h1)
+    myDirectory = directoryPath
+    write.csv(predictions, paste0(myDirectory,"predictions_window_", i, "AFDNS.csv"), row.names=TRUE)
+  }
+}
+
+automatic_optimization <- function(para_init, model, input_data, maxiter=10, window_nr=0, directoryPath="", maxFuncEvals=maxFuncEvals, method_="Nelder-Mead"){
   maxiter <- maxiter
   parameter_length <- length(para_init)
   model_parameters <- matrix(NA, maxiter, parameter_length)
@@ -275,37 +302,45 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10){
   prevLogLike <- 0
   logLike <- 2
   i<-0
+  if(method_=="BFGS"){
+    method_ <- "BFGS"
+    maxiter <- 1
+  }
   while(abs(prevLogLike-logLike)>0.1 & i<maxiter){
     i<-i+1
     
     # optimize model parameters
-    optim_values<-optim(parameters,model,control = list(trace=1, maxit=10000))
+    optim_values<-optim(parameters,model,control = list(trace=1, maxit=maxFuncEvals), dataset=input_data, method=method_)
     
     #convergence
     optim_statistics[i,1] <- optim_values$convergence
     
     #iterations
     optim_statistics[i,2] <- total_iterations
-
-        # model parameters
+    
+    # model parameters
     model_parameters[i, ] <- optim_values$par
     parameters <- optim_values$par
     
     # NegLogLike
     prevLogLike <- logLike
-    logLike <- model(para=parameters, dataset=input_data, return=TRUE, h=0)
+    logLike <- model(para=parameters, dataset=input_data, returnOnlyLikelihood=TRUE)
     optim_statistics[i,3] <- logLike
     
     # filtered RMSE
-    model_output <- model(parameters=parameters, dataset=input_data, returnOnlyLikelihood=FALSE, h=0)
+    model_output <- model(para=parameters, dataset=input_data, returnOnlyLikelihood=FALSE)
     
-    filtered_error_RMSE[i, ] <- sqrt(colMeans((model_output$v2*100)^2)) # multiplied with 100 due to scaling for AFDNS data
+    filtered_error_RMSE[i, ] <- sqrt(colMeans((model_output$v2*100)^2))
     
     total_iterations <<- 0
+    
+    myDirectory = directoryPath
+    fileName <- paste0(myDirectory,"AFDNS_intermediate.csv")
     intermediate_result <- list("optim_statistics"=optim_statistics, "model_parameters"=model_parameters, "filtered_error_RMSE"=filtered_error_RMSE)
-    write.csv(intermediate_result, "intermediate_result_AFDNS.csv", row.names = TRUE)
+    write.csv(intermediate_result, file=fileName, row.names = TRUE)
   }
-  
-  result <- list("model_parameters"=model_parameters)
-  result <- write.csv(result, "optimization_file_AFDNS.csv", row.names=TRUE)
+  fileName_finalOutput <- paste0(myDirectory,"AFDNS_", window_nr, "_final.csv")
+  result <- list("optim_statistics"=optim_statistics, "model_parameters"=model_parameters, "filtered_error_RMSE"=filtered_error_RMSE)
+  write.csv(result, fileName_finalOutput, row.names=TRUE)
+  return(optim_values$par)
 }
