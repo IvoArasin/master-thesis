@@ -36,7 +36,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
   T <- nrow(Y)
   W <- ncol(Y)
   l <- para[1]
-
+  
   # Create vectors and matrices
   mu	<- matrix(NA,N,1) # Mean vector
   phi<- diag(N) # Create transition-Matrix A (also commonly referred to as Phi)
@@ -67,7 +67,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
   Q[2,2] <- para[9]
   Q[3,3] <- para[10]
   
-  # Square process noise matrix (also ensures non-negativity)
+  # Square process noise matrix (ensures non-negativity by estimating standard deviation instead of variance)
   Q <- Q %*% t(Q) 
   
   #Set up dataframes for parameter collection
@@ -103,7 +103,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
       print(e)
       print("Lyapunov could not be evaluated!")
       cannot_be_done <- 1
-     #logLik<- -1000000000000000
+      #logLik<- -1000000000000000
       return(1000000000000000)
     },
     finally={
@@ -161,7 +161,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
       
       # Calculate Log-Likelihood
       logLik <- logLik-0.5*(W)*log(2*pi)-0.5*log(detF)-0.5*t(v)%*%F.inv%*%v
-      }
+    }
     # Updating the state vector and its estimation error-matrix
     a.tt[t, ]   <- a.t[t, ] +  P.t[t, , ] %*% t(B) %*% F.inv %*% v
     P.tt[t, , ] <- P.t[t, , ] - P.t[t, , ] %*% t(B) %*% F.inv %*% B %*% P.t[t, , ]
@@ -174,7 +174,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
     a.t[t + 1, ]  <- phi %*% a.tt[t, ] + (diag(N) - phi) %*% mu  
     P.t[t + 1, ,] <- phi %*% P.tt[t, ,] %*% t(phi) + Q
   }
-
+  
   # Forecasting
   y_t_h <- matrix(NA, forecast_horizon, W)
   if(t > T-1 & forecast_horizon>0){
@@ -198,7 +198,7 @@ independent_DNS <- function(para,Y,lik=TRUE, forecast_horizon=0) {
 # Automatic optimization with multiple self-initiated restarts #
 ################################################################
 
-para_init <- c(
+para_init <- c( # Obtained from two-step estimation
   0.72,
   0.98, 0.97, 0.96,
   2.2, -1.9, -3.3,
@@ -206,7 +206,6 @@ para_init <- c(
   
   0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
   0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1
-  
 )
 
 # Single optimization run
@@ -215,7 +214,7 @@ optim_para <- optimized_DNS_model_object$par
 
 # Apply model 
 DNS_model_fitted <- independent_DNS(para=optim_para, Y=data, lik=FALSE, forecast_horizon=12)
-
+DNS_model_fitted$negLokLig
 # Reconstruct fitted yields
 time_ <- 130
 B <- factor_loadings(optim_para[1],m)
@@ -223,9 +222,16 @@ recon <- B%*%DNS_model_fitted$a.tt[time_,1:3]
 plot(m,data[time_,], type="l")
 lines(m,recon, type="l", col="blue", lty=2)
 
+# Plot Level, Slope and Curvature
+plot(DNS_model_fitted$a.tt[,1], type="l", col="darkgreen", ylim=c(-6,5.5), main="DNS Factors")
+lines(DNS_model_fitted$a.tt[,2], type="l", col="black")
+lines(DNS_model_fitted$a.tt[,3], type="l", col="blue")
+legend(0, -5, legend=c("Level", "Slope", "Curvature"),
+       col=c("darkgreen", "black", "blue"), lty=1, lwd=2, horiz=TRUE, bty="n", x.intersp = 0.4)
+
 # Automatically optimize model in recursive fashion (Iterative Nelder-Mead)
 myDirectory = "/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/optimized_files/RollingWindowForcasts"
-automated_rollingWindow(para_init=para_init, model=independent_DNS, maxiter=15, maxFuncEvals=2000, data=data, directoryPath=myDirectory, method_="BFGS")
+automated_rollingWindow(para_init=para_init, model=independent_DNS, maxiter=15, maxFuncEvals=2000, data=data, directoryPath=myDirectory, method_="Nelder-Mead")
 
 # This function can be used to recursively optimize expanding windows
 automated_rollingWindow <- function(para_init, model, start_=1, end_=0, data=data, maxiter=10, maxFuncEvals=100000, directoryPath="", method_="Nelder-Mead"){
@@ -246,7 +252,7 @@ automated_rollingWindow <- function(para_init, model, start_=1, end_=0, data=dat
     predictions <- rbind(preds_h12, preds_h6, preds_h1)
     myDirectory = directoryPath
     write.csv(predictions, paste0(myDirectory,"predictions_window_", i, "DNS.csv"), row.names=TRUE)
-    }
+  }
 }
 
 automatic_optimization <- function(para_init, model, input_data, maxiter=10, window_nr=0, directoryPath="", maxFuncEvals=maxFuncEvals, method_="Nelder-Mead"){
@@ -290,7 +296,7 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10, win
     model_output <- model(para=parameters, Y=input_data, lik=FALSE)
     
     filtered_error_RMSE[i, ] <- sqrt(colMeans((model_output$v2)^2))
-  
+    
     total_iterations <<- 0
     
     myDirectory = directoryPath
@@ -307,9 +313,8 @@ automatic_optimization <- function(para_init, model, input_data, maxiter=10, win
 
 # To convert optimized parameters between estimations using differently scaled data
 para_scaler <- function(parameters){
-len_ <- length(parameters)
-parameters_scaledDown <- parameters
-parameters_scaledDown[5:len_] <- parameters_scaledDown[5:len_]/100
-parameters_scaledDown
+  len_ <- length(parameters)
+  parameters_scaledDown <- parameters
+  parameters_scaledDown[5:len_] <- parameters_scaledDown[5:len_]/100
+  parameters_scaledDown
 }
-
