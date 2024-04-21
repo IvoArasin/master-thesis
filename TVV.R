@@ -141,7 +141,7 @@ independent_DNS_TVV <- function(para,Y,lik=TRUE, h=0) {
   {
     # Restrictions on Gamma
     if(gamma0 <= 0 || gamma1<=0 || gamma2<=0 || gamma1+gamma2>=1){
-      print("Gamma error")
+      print("Gamma out of bounds")
       logLik<- -1000000000000000;
       return(1000000000000000)
       break
@@ -246,21 +246,25 @@ para_init_TVV <- c( # derived from two-step method
   
   0.4, 0.4)
 
+# Basic Optimization
+TVV_optim_object <- optim(para_init_TVV, independent_DNS_TVV, Y=data, method="BFGS")
+optim_para <- TVV_optim_object$par
+
+TVV_model <- independent_DNS_TVV(optim_para, Y=data, lik=FALSE, h=12)
+# Apply model
+
+# Plot common volatility variance h_t
+plot(TVV_model$h_t[10:191], type="l", main=expression(paste("Common Volatility ", h[t])))
+
+# plot Gamma weights
+plot(m, optim_para[31:50],
+     type="b",
+     main=expression(paste("Volatility Weights ", Gamma[epsilon])))
+
 # Automatically optimize model in recursive fashion (Iterative Nelder-Mead)
 myDirectory = "/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/optimized_files/RollingWindowForcasts"
 automated_rollingWindow(para_init=para_init_TVV, model=independent_DNS_TVV, maxiter=15, maxFuncEvals=2000, data=data, directoryPath=myDirectory, method_="BFGS")
 
-para_optim <- as.matrix(read.csv("/Users/ivoarasin/Desktop/Master/Semester Four/thesis/master_thesis_code_R/Finished DNS model files/optimized_files/RollingWindowForcastsTVV_1_final.csv"))
-params_ <- para_optim[1,5:56]
-TVV_model_object <- independent_DNS_TVV(para=params_, Y=data, lik=FALSE, h=12)
-
-# Plot common volatility variance h_t
-plot(TVV_model_object$h_t[10:191], type="l", main=expression(paste("Common Volatility ", h[t])))
-
-# plot Gamma weights
-plot(m, params_[31:50],
-     type="b",
-     main=expression(paste("6 Common Volatility Weights ", Gamma[epsilon])))
 
 # This function can be used to recursively optimize expanding windows
 automated_rollingWindow <- function(para_init, model, start_=1, end_=0, data=data, maxiter=10, maxFuncEvals=100000, directoryPath="", method_="Nelder-Mead"){
