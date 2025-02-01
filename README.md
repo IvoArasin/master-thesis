@@ -8,6 +8,9 @@ Models considered include:
 - Dynamic Nelson Siegel with time-varying shape- and volatility parameter (DNS-TVSV)
 - Arbitrage Free Dynamic Nelson Siegel (AFDNS)
 
+Link to Thesis
+![KU Leuven Thesis Repository](https://repository.teneo.libis.be/delivery/DeliveryManagerServlet?dps_pid=IE19281198&)
+
 The data:
 ![Yield Curve Data](YieldsFullSample.jpg)
 
