@@ -9,7 +9,7 @@ Models considered include:
 - Arbitrage Free Dynamic Nelson Siegel (AFDNS)
 
 Link to Thesis
-![KU Leuven Thesis Repository](https://repository.teneo.libis.be/delivery/DeliveryManagerServlet?dps_pid=IE19281198&)
+[KU Leuven Thesis Repository](https://repository.teneo.libis.be/delivery/DeliveryManagerServlet?dps_pid=IE19281198&)
 
 The data:
 ![Yield Curve Data](YieldsFullSample.jpg)
